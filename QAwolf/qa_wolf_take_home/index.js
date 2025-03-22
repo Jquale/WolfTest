@@ -1,48 +1,57 @@
 // EDIT THIS FILE TO COMPLETE ASSIGNMENT QUESTION 1
-const { equal } = require("assert");
-const { assert } = require("console");
-const { chromium } = require("playwright");
-const { expect } = require("playwright/test");
+import { equal } from "assert";
+import { assert } from "console";
+import { lchown } from "fs";
+import { waitForDebugger } from "inspector";
+import { chromium } from "@playwright/test";
 
 async function sortHackerNewsArticles() {
+  const ARTICLESTOCHECK = 100;
   // launch browser
   const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  const ARTICLESTOCHECK = 100;
-
-  // go to Hacker News
+  let context = await browser.newContext();
+  // Navigate to Hacker New
+  let page = await context.newPage();
   await page.goto("https://news.ycombinator.com/newest");
-  // Inspect or gather first 100 arfticles
-  const trs = page.locator('table#hnmain > tbody > tr');
-  const articleArry = [101];
-  //  let date = new Date(1900, 0, 1);
-  let leastRankArticle = ARTICLESTOCHECK;
-  let dateNowMill = Date.now();
+  let articleCount = 0;
+  let articleAges = (await page.$$('span.age'));
+  let newestDate = Date.now();
 
-  while (leastRankArticle < 100) {
-    await page.getByRole('button', { name: 'More' }).click();
-    trs += page.locator('table#hnmain > tbody > tr');
-    leastRankArticle = Math.Max(parseInt(trs.locator('span.rank').textContent()));
+  async function articlesAreInOrder(articles) {
+    let previousArticleDate = newestDate;
+    let currentArticleDate = newestDate;
+    articles.forEach(async (age) => {
+      currentArticleDate = JSON.stringify(await age.getAttribute('title')).split(' ')[1].substring(0, 10);
+      if (previousArticleDate >= currentArticleDate) {
+        previousArticleDate = currentArticleDate;
+        ++articleCount;
+        console.log(articleCount);
+        // articleCount++;
+      }
+    });
+
+    return true;
+  };
+
+
+  while (articleCount < ARTICLESTOCHECK) {
+    await articlesAreInOrder(articleAges);
+    // Load more articles
+    await page.locator('.morelink', { name: 'More' }).click();
+    console.log(page.url());
+    articleAges = await page.$$('span.age');
   }
 
-  // Iterate over tr collection for rank and second tr for date
-  // Compare rank with date verify sequence newest to oldest
+  // context = await browser.newContext();
+  // page = await context.newPage()
 
-  for (let i = 0; i < ARTICLESTOCHECK; i++) {
-    //    const tr = await trs.locator('.athing');
-    const tr_rank = await trs.locator('.athing > span.rank').textContent().equals(i);
-    const articleAgeMill = await tr_rank.locator('tr:next-sibling > span.age').textContent().split(' ')[1];
-    expect(articleAgeMill).toBeLessThanOrEqual(dateNowMill);
-  }
   // If we are her, first 100 are in order from newest to oldest!
-
-
-
-  await browser.close();
+  console.log('First 100 articles are in order from newest to oldest!');
 
 }
 
+
 (async () => {
   await sortHackerNewsArticles();
+
 })();

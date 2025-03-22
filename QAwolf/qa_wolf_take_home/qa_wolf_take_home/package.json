@@ -1,5 +1,6 @@
 {
   "name": "qa_wolf_take_home",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,6 +13,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.39.0",
+    "@types/jquery": "^3.5.32",
     "@types/node": "^20.8.9"
   }
 }
